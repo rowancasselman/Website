@@ -1,11 +1,11 @@
 import { useWallet } from '@solana/wallet-adapter-react';
-import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction} from '@solana/web3.js';
 import {
   getAssociatedTokenAddress,
   createBurnInstruction
 } from '@solana/spl-token';
 import toast from 'react-hot-toast';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { supabase } from '../supabaseClient'; // adjust path as needed
 
 
@@ -13,7 +13,7 @@ const WISH_MINT = new PublicKey("2ZoVtwFzd9unQXEGq19XjMRn8zF3i81o5kNK2u8Tpump");
 const WISH_DECIMALS = 6;
 
 export default function WishButton() {
-  const { publicKey, signTransaction, sendTransaction } = useWallet();
+  const { publicKey, sendTransaction } = useWallet();
   const connection = new Connection("https://cosmological-fragrant-replica.solana-mainnet.quiknode.pro/d10eb00a7ed1b6cfd7da30e15b72e052bcc1e362/");
   const [wish, setWish] = useState('');
   const [burnAmount, setBurnAmount] = useState(100000);

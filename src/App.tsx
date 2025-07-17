@@ -1,4 +1,4 @@
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+
 import {
   ConnectionProvider,
   WalletProvider
@@ -18,7 +18,6 @@ import './index.css';
 
 import WishStats from './components/WishStats';
 
-const network = WalletAdapterNetwork.Mainnet;
 const endpoint = 'https://api.mainnet-beta.solana.com';
 
 export default function App() {
