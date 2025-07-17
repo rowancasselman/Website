@@ -52,16 +52,7 @@ export default function WishButton() {
             console.error("No token account found at ATA.");
             return;
         }
-    
-        let uiAmount = 0;
-
-        if (
-            tokenAccountInfo.value &&
-            'parsed' in tokenAccountInfo.value.data &&
-            tokenAccountInfo.value.data.program === 'spl-token'
-            ) {
-        uiAmount = tokenAccountInfo.value.data.parsed.info.tokenAmount.uiAmount;
-        }
+        
         console.log("User token balance:", tokenAmount);
     
         const amountToBurn = burnAmount;
