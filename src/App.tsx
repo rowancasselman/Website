@@ -21,6 +21,8 @@ import wishcoinIcon from './assets/Wish.png';
 import { useEffect, useState } from 'react';
 import { supabase } from './supabaseClient';
 const endpoint = 'https://api.mainnet-beta.solana.com';
+import { Buffer } from 'buffer'
+window.Buffer = Buffer
 
 export default function App() {
   const wallets = [new PhantomWalletAdapter()];
