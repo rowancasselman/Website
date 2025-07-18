@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { supabase } from '../supabaseClient'; // adjust path as needed
 
 
-const WISH_MINT = new PublicKey("2ZoVtwFzd9unQXEGq19XjMRn8zF3i81o5kNK2u8Tpump"); // Replace later
+const WISH_MINT = new PublicKey("3VqXFcymG2UkbnZ9Q9n2UTLU752eX7MSYrTNjDocpump"); // Replace later
 const WISH_DECIMALS = 6;
 
 export default function WishButton() {
@@ -104,28 +104,31 @@ export default function WishButton() {
   return (
     
     <div className="flex flex-col items-center gap-4 p-4 w-full max-w-md mx-auto">
-      {wish && (
-  <p className="mt-2 text-white italic">I wish {wish}</p>
-)}
-      <input
-        type="text"
-        value={wish}
-        onChange={(e) => setWish(e.target.value)}
-        maxLength={80}
-        placeholder="I wish..."
-        className="w-full px-4 py-2 border border-gray-300 text-black rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
-      />
+    <p className={`mt-2 italic transition-opacity duration-300 ${wish ? 'text-white' : 'text-gray-400'}`}>
+      I wish {wish || '...'}
+    </p>
+  
+    <input
+      type="text"
+      value={wish}
+      onChange={(e) => setWish(e.target.value)}
+      maxLength={80}
+      placeholder="Type your wish..."
+      className="w-full px-4 py-2 border border-gray-300 text-black rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+    />
+  
     <label className="text-white mb-2 block text-sm font-medium"></label>
-<input
-  type="range"
-  min={100000}
-  max={100000000}
-  step={100000}
-  value={burnAmount}
-  onChange={(e) => setBurnAmount(Number(e.target.value))}
-  className="w-full mb-2"
-/>
-<p className="text-white mb-4">Burn Amount: {burnAmount.toLocaleString()} Wish</p>
+    <input
+      type="range"
+      min={100000}
+      max={100000000}
+      step={100000}
+      value={burnAmount}
+      onChange={(e) => setBurnAmount(Number(e.target.value))}
+      className="w-full mb-2"
+    />
+
+<p className="text-white mb-4">Burn Amount: {burnAmount.toLocaleString()} WISH</p>
         
       <button
         onClick={handleWish}

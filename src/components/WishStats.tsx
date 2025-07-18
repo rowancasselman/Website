@@ -34,6 +34,7 @@ export default function WishList() {
 
   return (
     <div className="mt-8 w-full max-w-3xl mx-auto mb-24">
+        
       <h2 className="text-2xl font-bold mb-4 text-center">Recent Wishes</h2>
       <div className="flex justify-center w-full">
         <table className="w-full text-left border-collapse border border-gray-300">
