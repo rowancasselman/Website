@@ -5,7 +5,7 @@ import '@solana/wallet-adapter-react-ui/styles.css';
 
 export default function WalletButton() {
   return (
-    <div className="absolute top-4 right-4">
+    <div className="absolute top-0 right-0">
       <WalletMultiButton />
     </div>
   );
