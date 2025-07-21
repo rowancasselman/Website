@@ -11,7 +11,8 @@ import {
 } from '@solana/wallet-adapter-wallets';
 
 import WalletButton from './components/WalletButton';
-
+import { Buffer } from 'buffer';
+window.Buffer = Buffer;
 import { Toaster } from 'react-hot-toast';
 import './index.css';
 
