@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient'; // adjust path
 
-const WISH_MINT = new PublicKey("3VqXFcymG2UkbnZ9Q9n2UTLU752eX7MSYrTNjDocpump");
+const WISH_MINT = new PublicKey("J758VJFLDn28S9L71WuXn9AbJ7yQcUoYFbnMeAG982oY");
 const WISH_DECIMALS = 6;
 
 type Plot = {
