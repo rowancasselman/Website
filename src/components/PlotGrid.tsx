@@ -147,12 +147,12 @@ export default function PlotGrid() {
     }
 
     if (!tokenAccountInfo.value) {
-      toast.error("You don't have a Wish token account.");
+      toast.error("You don't have a PLOT token account.");
       return false;
     }
 
     if (tokenAmount < amountToBurn) {
-      toast.error(`Insufficient Wish token balance. Need ${amountToBurn} WISH.`);
+      toast.error(`Insufficient Wish token balance. Need ${amountToBurn} PLOT.`);
       return false;
     }
 
@@ -168,7 +168,7 @@ export default function PlotGrid() {
     const tx = new Transaction().add(burnIx);
     const sig = await sendTransaction(tx, connection);
     await connection.confirmTransaction(sig, 'confirmed');
-    toast.success(`Burned ${amountToBurn.toLocaleString()} WISH tokens!`);
+    toast.success(`Burned ${amountToBurn.toLocaleString()} PLOT tokens!`);
     return true;
 
   } catch (error) {
