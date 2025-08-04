@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { supabase } from '../supabaseClient';
-import ResultsGrid from './ResultsGrid'; // the new results grid component
 
 
 type Plot = {
