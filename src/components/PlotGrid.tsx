@@ -168,87 +168,86 @@ export default function PlotGrid() {
   }, []);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-white flex-col space-y-6 relative">
-      {/* Top: Paintbrush */}
-      <div className="flex flex-wrap justify-center gap-2">
-        {allowedColors.map(color => (
-          <button
-            key={color}
-            className={`w-8 h-8 rounded-full border-2 ${selectedColor === color ? 'border-black' : 'border-gray-300'}`}
-            style={{ backgroundColor: color }}
-            onClick={() => setSelectedColor(color)}
-          />
-        ))}
+  <div className="min-h-screen overflow-y-auto bg-white flex flex-col items-center p-4 space-y-6">
+    {/* Top: Paintbrush */}
+    <div className="flex flex-wrap justify-center gap-2">
+      {allowedColors.map(color => (
+        <button
+          key={color}
+          className={`w-8 h-8 rounded-full border-2 ${selectedColor === color ? 'border-black' : 'border-gray-300'}`}
+          style={{ backgroundColor: color }}
+          onClick={() => setSelectedColor(color)}
+        />
+      ))}
+    </div>
+
+    {/* Grid container wrapper */}
+    <div className="relative">
+      <div
+        className="grid border border-gray-300"
+        style={{
+          gridTemplateColumns: `repeat(${gridSize.cols}, ${plotSizePx}px)`,
+          gridTemplateRows: `repeat(${gridSize.rows}, ${plotSizePx}px)`
+        }}
+        onMouseDown={() => (isPaintingRef.current = true)}
+        onMouseUp={() => (isPaintingRef.current = false)}
+        onMouseLeave={() => {
+          isPaintingRef.current = false;
+          handleMouseLeave();
+        }}
+      >
+        {plots.map((plot) => {
+          const key = `${plot.x}-${plot.y}`;
+          const overrideColor = localVotes.get(key);
+          return (
+            <div
+              key={key}
+              className="border border-gray-300"
+              style={{
+                backgroundColor: overrideColor ?? plot.color,
+                width: plotSizePx,
+                height: plotSizePx,
+                cursor: "crosshair",
+                position: "relative"
+              }}
+              onMouseDown={() => paintPlot(plot)}
+              onMouseEnter={() => handleMouseEnter(plot)}
+              onMouseLeave={handleMouseLeave}
+            />
+          );
+        })}
       </div>
 
-      {/* Grid container wrapper for relative positioning */}
-      <div className="relative">
-        {/* Grid */}
+      {/* Hover votes UI */}
+      {hoverVotes && (
         <div
-          className="grid border border-gray-300"
+          className="absolute bg-white border shadow p-2 rounded text-sm space-y-1"
           style={{
-            gridTemplateColumns: `repeat(${gridSize.cols}, ${plotSizePx}px)`,
-            gridTemplateRows: `repeat(${gridSize.rows}, ${plotSizePx}px)`
-          }}
-          onMouseDown={() => (isPaintingRef.current = true)}
-          onMouseUp={() => (isPaintingRef.current = false)}
-          onMouseLeave={() => {
-            isPaintingRef.current = false;
-            handleMouseLeave();
+            top: hoverVotes.y * plotSizePx + 75,
+            left: hoverVotes.x * plotSizePx,
+            zIndex: 50,
+            pointerEvents: 'none',
+            minWidth: 80,
           }}
         >
-          {plots.map((plot) => {
-            const key = `${plot.x}-${plot.y}`;
-            const overrideColor = localVotes.get(key);
-            return (
-              <div
-                key={key}
-                className="border border-gray-300"
-                style={{
-                  backgroundColor: overrideColor ?? plot.color,
-                  width: plotSizePx,
-                  height: plotSizePx,
-                  cursor: "crosshair",
-                  position: "relative"
-                }}
-                onMouseDown={() => paintPlot(plot)}
-                onMouseEnter={() => handleMouseEnter(plot)}
-                onMouseLeave={handleMouseLeave}
-              />
-            );
-          })}
+          {Object.entries(hoverVotes.votes).map(([color, count]) =>
+            count > 0 ? (
+              <div key={color} className="flex items-center space-x-2">
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color, border: '1px solid #000' }} />
+                <span>{count}</span>
+              </div>
+            ) : null
+          )}
         </div>
+      )}
+    </div>
 
-        {/* Hover votes UI */}
-        {hoverVotes && (
-          <div
-            className="absolute bg-white border shadow p-2 rounded text-sm space-y-1"
-            style={{
-              top: hoverVotes.y * plotSizePx + 75,
-              left: hoverVotes.x * plotSizePx - 0,
-              zIndex: 50,
-              pointerEvents: 'none',
-              minWidth: 80,
-            }}
-          >
-            {Object.entries(hoverVotes.votes).map(([color, count]) =>
-              count > 0 ? (
-                <div key={color} className="flex items-center space-x-2">
-                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color, border: '1px solid #000' }} />
-                  <span>{count}</span>
-                </div>
-              ) : null
-            )}
-            {Object.keys(hoverVotes.votes).length === 0 && <div>No votes</div>}
-          </div>
-        )}
-      </div>
-
-      {/* Submit Button */}
+    {/* Submit Button with extra bottom margin */}
+    <div className="mb-10">
       <button
         className={`mt-4 px-6 py-2 rounded ${
-          hasSubmittedThisSession 
-            ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+          hasSubmittedThisSession
+            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
             : 'bg-black text-white hover:bg-gray-800'
         }`}
         onClick={submitVotes}
@@ -257,5 +256,7 @@ export default function PlotGrid() {
         {hasSubmittedThisSession ? 'Already Submitted' : 'Submit Votes'}
       </button>
     </div>
-  );
+  </div>
+);
+
 }
