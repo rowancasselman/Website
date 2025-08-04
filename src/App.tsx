@@ -26,6 +26,9 @@ export default function App() {
         </div>
       </div>
 
+      {/* Spacer for scroll padding on mobile */}
+      <div className="h-32 sm:h-16" />
+
       <Toaster position="bottom-center" />
     </div>
   </div>
