@@ -5,10 +5,10 @@ import PlotGrid from './components/PlotGrid';
 export default function App() {
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
-      {/* Scrollable horizontal wrapper */}
-      <div className="w-full max-w-full overflow-x-auto">
-        {/* Grid should size itself naturally */}
-        <div className="inline-block">
+      {/* Scrollable & centerable wrapper */}
+      <div className="w-full overflow-x-auto">
+        {/* Center content inside scroll area */}
+        <div className="flex justify-center min-w-[512px]">
           <PlotGrid />
         </div>
       </div>
