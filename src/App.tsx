@@ -8,8 +8,8 @@ export default function App() {
   const [showResults, setShowResults] = useState(false);
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center p-4 overflow-y-auto">
-
+  <div className="min-h-screen bg-white overflow-y-auto">
+    <div className="flex flex-col items-center p-4">
       {/* Toggle Button */}
       <button
         className="mb-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -28,5 +28,6 @@ export default function App() {
 
       <Toaster position="bottom-center" />
     </div>
-  );
+  </div>
+);
 }

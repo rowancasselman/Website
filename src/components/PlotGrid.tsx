@@ -246,7 +246,7 @@ export default function PlotGrid() {
 
       {/* Submit Button */}
       <button
-        className={`mt-4 mb-8 px-4 py-2 bg-blue-600 text-white rounded sticky bottom-4 ${
+        className={`mt-4 px-6 py-2 rounded ${
           hasSubmittedThisSession 
             ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
             : 'bg-black text-white hover:bg-gray-800'
