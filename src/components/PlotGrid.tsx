@@ -1,308 +1,163 @@
-import { useWallet } from '@solana/wallet-adapter-react';
-import { Connection, PublicKey, Transaction } from '@solana/web3.js';
-import {
-  getAssociatedTokenAddress,
-  createBurnInstruction
-} from '@solana/spl-token';
+import { useEffect, useState, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient'; // adjust path
-
-const WISH_MINT = new PublicKey("GjopR4M8sTUtVGHK8LzkB5S7Fm9UHpoQXqe29KgHbonk");
-const WISH_DECIMALS = 6;
+import { supabase } from '../supabaseClient';
 
 type Plot = {
   x: number;
   y: number;
   color: string;
-  owner?: string | null;
-  message?: string;
 };
+
 const allowedColors = [
-  "red",
-  "blue",
-  "green",
-  "yellow",
-  "orange",
-  "purple",
-  "pink",
-  "brown",
-  "black",
-  "white",
-  "gray",
-  "cyan",
-  "magenta",
-  "lime",
-  "navy"
+  "red", "blue", "green", "yellow", "orange", "purple", "pink",
+  "saddlebrown", "black", "white", "gray", "cyan", "magenta", "lime", "navy"
 ];
 
+const gridSize = { cols: 8, rows: 8 };
+const plotSizePx = 60;
+
 export default function PlotGrid() {
-  const { publicKey, sendTransaction } = useWallet();
-  const connection = new Connection("https://cosmological-fragrant-replica.solana-mainnet.quiknode.pro/d10eb00a7ed1b6cfd7da30e15b72e052bcc1e362/");
-
-  const plotSizePx = 12;
-  const [gridSize, setGridSize] = useState({ cols: 0, rows: 0 });
   const [plots, setPlots] = useState<Plot[]>([]);
+  const [selectedColor, setSelectedColor] = useState("red");
+  const [localVotes, setLocalVotes] = useState<Map<string, string>>(new Map());
+  const isPaintingRef = useRef(false);
 
-  // Calculate grid size on mount and resize
   useEffect(() => {
-    function updateGridSize() {
-      const cols = Math.floor(window.innerWidth / plotSizePx);
-      const rows = Math.floor(window.innerHeight / plotSizePx);
-      setGridSize({ cols, rows });
+    const newPlots: Plot[] = [];
+    for (let y = 0; y < gridSize.rows; y++) {
+      for (let x = 0; x < gridSize.cols; x++) {
+        newPlots.push({ x, y, color: "#ffffff" });
+      }
     }
-    updateGridSize();
-    window.addEventListener("resize", updateGridSize);
-    return () => window.removeEventListener("resize", updateGridSize);
+    setPlots(newPlots);
   }, []);
 
-  // Generate grid plots
-  useEffect(() => {
-  if (gridSize.cols === 0 || gridSize.rows === 0) return;
-
-  const totalPlots = gridSize.cols * gridSize.rows;
-  const newPlots: Plot[] = [];
-
-  for (let i = 0; i < totalPlots; i++) {
-    const x = i % gridSize.cols;
-    const y = Math.floor(i / gridSize.cols);
-
-    // Try to find old plot data for this coordinate
-    const oldPlot = plots.find((p) => p.x === x && p.y === y);
-
-    if (oldPlot) {
-      newPlots.push(oldPlot);  // keep previous color/owner/message
-    } else {
-      newPlots.push({
-        x,
-        y,
-        color: "#ffffff",
-        owner: null,
-        message: "",
-      });
-    }
-  }
-
-  setPlots(newPlots);
-}, [gridSize]);
-  useEffect(() => {
-  async function loadClaims() {
-    try {
-      // Fetch all plot claims
-      const { data: claims, error } = await supabase
-        .from('plot_claims')
-        .select('x, y, color, owner:wallet, message')
-        .order('timestamp', { ascending: true });
-
-      if (error) {
-        console.error("Failed to load claims:", error);
-        return;
-      }
-
-      if (!claims) return;
-
-      // Update plots with claims data
-      setPlots((oldPlots) =>
-        oldPlots.map((plot) => {
-          const claim = claims.find(
-            (c) => c.x === plot.x && c.y === plot.y
-          );
-          if (claim) {
-            return {
-              ...plot,
-              color: claim.color,
-              owner: claim.owner,
-              message: claim.message,
-            };
-          }
-          return plot;
-        })
-      );
-    } catch (e) {
-      console.error("Error loading claims:", e);
-    }
-  }
-
-  loadClaims();
-}, []);
-  // Burn WISH tokens function
-  async function burnTokens(amountToBurn: number) {
-  if (!publicKey || !sendTransaction) {
-    toast.error("Connect your wallet first!");
-    return false;
-  }
-
-  try {
-    const userATA = await getAssociatedTokenAddress(WISH_MINT, publicKey);
-
-    const tokenAccountInfo = await connection.getParsedAccountInfo(userATA);
-    let tokenAmount = 0;
-
-    if (
-      tokenAccountInfo.value &&
-      'parsed' in tokenAccountInfo.value.data &&
-      tokenAccountInfo.value.data.program === 'spl-token'
-    ) {
-      tokenAmount = tokenAccountInfo.value.data.parsed.info.tokenAmount.uiAmount;
-    }
-
-    if (!tokenAccountInfo.value) {
-      toast.error("You don't have a PLOT token account.");
-      return false;
-    }
-
-    if (tokenAmount < amountToBurn) {
-      toast.error(`Insufficient Wish token balance. Need ${amountToBurn} PLOT.`);
-      return false;
-    }
-
-    const amountToBurnRaw = amountToBurn * 10 ** WISH_DECIMALS;
-
-    const burnIx = createBurnInstruction(
-      userATA,
-      WISH_MINT,
-      publicKey,
-      amountToBurnRaw
+  const paintPlot = (plot: Plot) => {
+    const key = `${plot.x}-${plot.y}`;
+    const newPlots = plots.map(p =>
+      p.x === plot.x && p.y === plot.y ? { ...p, color: selectedColor } : p
     );
+    setPlots(newPlots);
 
-    const tx = new Transaction().add(burnIx);
-    const sig = await sendTransaction(tx, connection);
-    await connection.confirmTransaction(sig, 'confirmed');
-    toast.success(`Burned ${amountToBurn.toLocaleString()} PLOT tokens!`);
-    return true;
+    // Track local vote
+    setLocalVotes(prev => {
+      const updated = new Map(prev);
+      updated.set(key, selectedColor);
+      return updated;
+    });
+  };
 
-  } catch (error) {
-    console.error("Burn failed:", error);
-    toast.error("Burn transaction failed.");
-    return false;
-  }
-}
+  const submitVotes = async () => {
+    if (localVotes.size === 0) {
+      toast("You haven't painted anything!");
+      return;
+    }
 
+    const ip = await getClientIP();
 
-  // On plot click, burn then claim
-  const handlePlotClick = async (plot: Plot) => {
-  if (!publicKey) {
-    toast.error("Please connect your wallet first!");
-    return;
-  }
-
-  try {
-    // Fetch latest burn amount for the plot
-    const { data: latestClaims, error: fetchError } = await supabase
+    // Check if IP already voted
+    const { data: existingVotes, error: fetchError } = await supabase
       .from('plot_claims')
-      .select('tokens_burned')
-      .eq('x', plot.x)
-      .eq('y', plot.y)
-      .order('timestamp', { ascending: false })
+      .select('id')
+      .eq('voter_ip', ip)
       .limit(1);
 
     if (fetchError) {
-      console.error("Supabase fetch error:", fetchError);
-      toast.error("Failed to fetch plot data.");
+      console.error("Error checking votes by IP:", fetchError);
+      toast.error("Could not verify vote status.");
       return;
     }
 
-    const latestBurn = latestClaims?.[0]?.tokens_burned ?? 0;
-    const burnAmount = latestBurn > 0 ? latestBurn + 10_000 : 10_000;
-
-    // Burn tokens
-    const burnSuccess = await burnTokens(burnAmount);
-    if (!burnSuccess) return;
-
-    // Delete all previous claims for this plot
-    const { error: deleteError } = await supabase
-      .from('plot_claims')
-      .delete()
-      .eq('x', plot.x)
-      .eq('y', plot.y);
-
-    if (deleteError) {
-      console.error("Supabase delete error:", deleteError);
-      toast.error("Failed to delete old plot claims.");
+    if (existingVotes && existingVotes.length > 0) {
+      toast.error("You have already voted!");
       return;
     }
 
-    // Prompt for color and message
-    let color = "";
-    while (true) {
-    const input = prompt(`Pick a color from the list: ${allowedColors.join(", ")}`, "red");
-    if (input === null) {
-        // User cancelled prompt, exit or assign a fallback color if you want
-        alert("Color selection cancelled. Plot claiming aborted.");
-        return; // exit the function so no claim happens
-    }
-
-    const inputLower = input.toLowerCase();
-    if (allowedColors.includes(inputLower)) {
-        color = inputLower;
-        break; // valid color, exit loop
-    } else {
-        alert("Invalid color selected! Please try again.");
-    }
-    }
-    const message = prompt("Enter a message (max 20 chars):", "") || "";
-
-    // Update local plots state
-    setPlots((oldPlots) =>
-      oldPlots.map((p) =>
-        p.x === plot.x && p.y === plot.y
-          ? { ...p, color, owner: publicKey.toBase58(), message: message.slice(0, 20) }
-          : p
-      )
-    );
-
-    // Insert new claim
-    const { error: insertError } = await supabase.from('plot_claims').insert([
-      {
-        wallet: publicKey.toBase58(),
-        x: plot.x,
-        y: plot.y,
+    // Prepare votes for submission
+    const votes = Array.from(localVotes.entries()).map(([key, color]) => {
+      const [x, y] = key.split('-').map(Number);
+      return {
+        x,
+        y,
         color,
-        message,
-        tokens_burned: burnAmount,
-        timestamp: new Date().toISOString(),
-      }
-    ]);
+        voter_ip: ip,
+      };
+    });
 
-    if (insertError) {
-      console.error("Supabase insert error:", insertError);
-      toast.error("Failed to save new claim.");
-      return;
+    const { error } = await supabase.from('plot_claims').insert(votes);
+
+    if (error) {
+      console.error("Failed to submit votes:", error);
+      toast.error("Error submitting your vote.");
+    } else {
+      toast.success("Votes submitted!");
+      setLocalVotes(new Map());
     }
-
-    toast.success("Plot reclaimed successfully!");
-
-  } catch (e) {
-    console.error("Claim failed:", e);
-    toast.error("Something went wrong during plot claiming.");
+  };
+  async function getClientIP() {
+  try {
+    const res = await fetch('https://api64.ipify.org?format=json'); // or https://api.ipify.org?format=json
+    const data = await res.json();
+    return data.ip as string;
+  } catch {
+    return "unknown";
   }
-};
-
-
+}
   return (
-    <div
-      className="grid bg-gray-900"
-      style={{
-        gridTemplateColumns: `repeat(${gridSize.cols}, ${plotSizePx}px)`,
-        gridTemplateRows: `repeat(${gridSize.rows}, ${plotSizePx}px)`,
-        width: gridSize.cols * plotSizePx,
-        height: gridSize.rows * plotSizePx,
-      }}
-    >
-      {plots.map((plot) => (
-  <div
-    key={`${plot.x}-${plot.y}`}
-    className="border border-gray-700 cursor-pointer"
-    style={{ 
-      backgroundColor: plot.color, 
-      width: plotSizePx, 
-      height: plotSizePx,
-      borderWidth: '0.5px',
-    }}
-    onClick={() => handlePlotClick(plot)}
-    title={plot.owner ? `Owner: ${plot.owner}\n${plot.message}` : "Unclaimed"}
-  />
-))}
+    <div className="flex items-center justify-center min-h-screen bg-white flex-col space-y-6">
+      {/* Top: Paintbrush */}
+      <div className="flex flex-wrap justify-center gap-2">
+        {allowedColors.map(color => (
+          <button
+            key={color}
+            className={`w-8 h-8 rounded-full border-2 ${selectedColor === color ? 'border-black' : 'border-gray-300'}`}
+            style={{ backgroundColor: color }}
+            onClick={() => setSelectedColor(color)}
+          />
+        ))}
+      </div>
+
+      {/* Grid */}
+      <div
+        className="grid border border-gray-300"
+        style={{
+          gridTemplateColumns: `repeat(${gridSize.cols}, ${plotSizePx}px)`,
+          gridTemplateRows: `repeat(${gridSize.rows}, ${plotSizePx}px)`
+        }}
+        onMouseDown={() => (isPaintingRef.current = true)}
+        onMouseUp={() => (isPaintingRef.current = false)}
+        onMouseLeave={() => (isPaintingRef.current = false)}
+      >
+        {plots.map((plot) => {
+          const key = `${plot.x}-${plot.y}`;
+          const overrideColor = localVotes.get(key);
+          return (
+            <div
+              key={key}
+              className="border border-gray-300"
+              style={{
+                backgroundColor: overrideColor ?? plot.color,
+                width: plotSizePx,
+                height: plotSizePx,
+                cursor: "crosshair"
+              }}
+              onMouseDown={() => paintPlot(plot)}
+              onMouseEnter={() => {
+                if (isPaintingRef.current) paintPlot(plot);
+              }}
+              title={`(${plot.x}, ${plot.y})`}
+            />
+          );
+        })}
+      </div>
+
+      {/* Submit Button */}
+      <button
+        className="mt-4 px-6 py-2 bg-black text-white rounded hover:bg-gray-800"
+        onClick={submitVotes}
+      >
+        Submit Votes
+      </button>
     </div>
   );
 }
