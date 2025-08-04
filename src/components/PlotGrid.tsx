@@ -16,6 +16,7 @@ const allowedColors = [
 ];
 
 const gridSize = { cols: 8, rows: 8 };
+const plotSizePx = 60;
 
 export default function PlotGrid() {
   const [plots, setPlots] = useState<Plot[]>([]);
@@ -38,22 +39,37 @@ export default function PlotGrid() {
   }, []);
 
   const paintPlot = (plot: Plot) => {
-    // Fix #1: Guard against empty plots array
-    if (plots.length === 0) return;
-    
-    const key = `${plot.x}-${plot.y}`;
-    const newPlots = plots.map(p =>
-      p.x === plot.x && p.y === plot.y ? { ...p, color: selectedColor } : p
-    );
-    setPlots(newPlots);
+  const key = `${plot.x}-${plot.y}`;
+  const currentColor = localVotes.get(key);
 
-    // Track local vote
+  if (currentColor === selectedColor) {
+    // Undo: remove the vote for this tile if same color clicked again
+    setLocalVotes(prev => {
+      const updated = new Map(prev);
+      updated.delete(key);
+      return updated;
+    });
+    // Also reset the color in the grid to the original plot color
+    setPlots(prevPlots =>
+      prevPlots.map(p =>
+        p.x === plot.x && p.y === plot.y ? { ...p, color: p.color } : p
+      )
+    );
+  } else {
+    // Normal paint: set vote with selectedColor
     setLocalVotes(prev => {
       const updated = new Map(prev);
       updated.set(key, selectedColor);
       return updated;
     });
-  };
+    setPlots(prevPlots =>
+      prevPlots.map(p =>
+        p.x === plot.x && p.y === plot.y ? { ...p, color: selectedColor } : p
+      )
+    );
+  }
+};
+
 
   async function getVotesForTile(x: number, y: number): Promise<Record<string, number>> {
     const { data, error } = await supabase
@@ -168,96 +184,94 @@ export default function PlotGrid() {
   }, []);
 
   return (
-  <div className="flex flex-col items-center min-h-screen bg-white space-y-6 p-4 overflow-y-auto">
-    {/* Top: Paintbrush */}
-    <div className="flex flex-wrap justify-center gap-2">
-      {allowedColors.map(color => (
-        <button
-          key={color}
-          className={`w-8 h-8 rounded-full border-2 ${selectedColor === color ? 'border-black' : 'border-gray-300'}`}
-          style={{ backgroundColor: color }}
-          onClick={() => setSelectedColor(color)}
-        />
-      ))}
-    </div>
-
-    {/* Grid container wrapper for relative positioning */}
-    <div className="relative w-full max-w-md">
-      {/* Grid */}
-      <div
-        className="grid border border-gray-300"
-        style={{
-          gridTemplateColumns: `repeat(${gridSize.cols}, minmax(0, 1fr))`,
-          gridTemplateRows: `repeat(${gridSize.rows}, minmax(0, 1fr))`,
-          aspectRatio: `${gridSize.cols} / ${gridSize.rows}`, // maintain overall aspect ratio
-          width: '100%',
-          maxWidth: '100%',
-        }}
-        onMouseDown={() => (isPaintingRef.current = true)}
-        onMouseUp={() => (isPaintingRef.current = false)}
-        onMouseLeave={() => {
-          isPaintingRef.current = false;
-          handleMouseLeave();
-        }}
-      >
-        {plots.map((plot) => {
-          const key = `${plot.x}-${plot.y}`;
-          const overrideColor = localVotes.get(key);
-          return (
-            <div
-              key={key}
-              className="border border-gray-300 aspect-square"
-              style={{
-                backgroundColor: overrideColor ?? plot.color,
-                cursor: "crosshair",
-                position: "relative"
-              }}
-              onMouseDown={() => paintPlot(plot)}
-              onMouseEnter={() => handleMouseEnter(plot)}
-              onMouseLeave={handleMouseLeave}
-            />
-          );
-        })}
+    <div className="flex items-center justify-center min-h-screen bg-white flex-col space-y-6 relative">
+      {/* Top: Paintbrush */}
+      <div className="flex flex-wrap justify-center gap-2">
+        {allowedColors.map(color => (
+          <button
+            key={color}
+            className={`w-8 h-8 rounded-full border-2 ${selectedColor === color ? 'border-black' : 'border-gray-300'}`}
+            style={{ backgroundColor: color }}
+            onClick={() => setSelectedColor(color)}
+          />
+        ))}
       </div>
 
-      {/* Hover votes UI */}
-      {hoverVotes && (
+      {/* Grid container wrapper for relative positioning */}
+      <div className="relative">
+        {/* Grid */}
         <div
-          className="absolute bg-white border shadow p-2 rounded text-sm space-y-1"
+          className="grid border border-gray-300"
           style={{
-            top: hoverVotes.y * (100 / gridSize.rows) + 75 + '%',
-            left: hoverVotes.x * (100 / gridSize.cols) + '%',
-            zIndex: 50,
-            pointerEvents: 'none',
-            minWidth: 80,
+            gridTemplateColumns: `repeat(${gridSize.cols}, ${plotSizePx}px)`,
+            gridTemplateRows: `repeat(${gridSize.rows}, ${plotSizePx}px)`
+          }}
+          onMouseDown={() => (isPaintingRef.current = true)}
+          onMouseUp={() => (isPaintingRef.current = false)}
+          onMouseLeave={() => {
+            isPaintingRef.current = false;
+            handleMouseLeave();
           }}
         >
-          {Object.entries(hoverVotes.votes).map(([color, count]) =>
-            count > 0 ? (
-              <div key={color} className="flex items-center space-x-2">
-                <div className="w-4 h-4 rounded-full border border-black" style={{ backgroundColor: color }} />
-                <span>{count}</span>
-              </div>
-            ) : null
-          )}
-          {Object.keys(hoverVotes.votes).length === 0 && <div>No votes</div>}
+          {plots.map((plot) => {
+            const key = `${plot.x}-${plot.y}`;
+            const overrideColor = localVotes.get(key);
+            return (
+              <div
+                key={key}
+                className="border border-gray-300"
+                style={{
+                  backgroundColor: overrideColor ?? plot.color,
+                  width: plotSizePx,
+                  height: plotSizePx,
+                  cursor: "crosshair",
+                  position: "relative"
+                }}
+                onMouseDown={() => paintPlot(plot)}
+                onMouseEnter={() => handleMouseEnter(plot)}
+                onMouseLeave={handleMouseLeave}
+              />
+            );
+          })}
         </div>
-      )}
+
+        {/* Hover votes UI */}
+        {hoverVotes && (
+          <div
+            className="absolute bg-white border shadow p-2 rounded text-sm space-y-1"
+            style={{
+              top: hoverVotes.y * plotSizePx + 75,
+              left: hoverVotes.x * plotSizePx - 0,
+              zIndex: 50,
+              pointerEvents: 'none',
+              minWidth: 80,
+            }}
+          >
+            {Object.entries(hoverVotes.votes).map(([color, count]) =>
+              count > 0 ? (
+                <div key={color} className="flex items-center space-x-2">
+                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color, border: '1px solid #000' }} />
+                  <span>{count}</span>
+                </div>
+              ) : null
+            )}
+            {Object.keys(hoverVotes.votes).length === 0 && <div>No votes</div>}
+          </div>
+        )}
+      </div>
+
+      {/* Submit Button */}
+      <button
+        className={`mt-4 px-6 py-2 rounded ${
+          hasSubmittedThisSession 
+            ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+            : 'bg-black text-white hover:bg-gray-800'
+        }`}
+        onClick={submitVotes}
+        disabled={hasSubmittedThisSession}
+      >
+        {hasSubmittedThisSession ? 'Already Submitted' : 'Submit Votes'}
+      </button>
     </div>
-
-    {/* Submit Button */}
-    <button
-      className={`mt-4 px-6 py-2 rounded ${
-        hasSubmittedThisSession
-          ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-          : 'bg-black text-white hover:bg-gray-800'
-      }`}
-      onClick={submitVotes}
-      disabled={hasSubmittedThisSession}
-    >
-      {hasSubmittedThisSession ? 'Already Submitted' : 'Submit Votes'}
-    </button>
-  </div>
-);
-
+  );
 }
