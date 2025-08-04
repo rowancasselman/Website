@@ -49,10 +49,10 @@ export default function PlotGrid() {
       updated.delete(key);
       return updated;
     });
-    // Also reset the color in the grid to the original plot color
+    // Reset to original white color on undo
     setPlots(prevPlots =>
       prevPlots.map(p =>
-        p.x === plot.x && p.y === plot.y ? { ...p, color: p.color } : p
+        p.x === plot.x && p.y === plot.y ? { ...p, color: "#ffffff" } : p
       )
     );
   } else {
@@ -69,6 +69,7 @@ export default function PlotGrid() {
     );
   }
 };
+
 
 
   async function getVotesForTile(x: number, y: number): Promise<Record<string, number>> {
