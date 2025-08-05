@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { supabase } from '../supabaseClient';
-
+//yup
 type Plot = {
   x: number;
   y: number;
