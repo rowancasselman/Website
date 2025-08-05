@@ -14,7 +14,7 @@ export default function App() {
         className="mb-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         onClick={() => setShowResults(!showResults)}
       >
-        {showResults ? 'Switch to Voting Grid' : 'Switch to Results Grid'}
+        {showResults ? 'Switch to Drawing Canvas' : 'Switch to Gallery'}
       </button>
 
       {/* Scrollable & centerable wrapper */}
