@@ -115,8 +115,8 @@ export default function PlotGrid() {
     return;
   }
 
-  if (existingArtworks.length >= 1) {
-    toast.error("You have already submitted an artwork.");
+  if (existingArtworks.length >= 10) {
+    toast.error("You have submitted too much artwork.");
     return;
   }
 

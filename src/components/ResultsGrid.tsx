@@ -147,7 +147,7 @@ export default function ResultsGrid() {
               width: plotSizePx,
               height: plotSizePx,
               backgroundColor: color,
-              border: "1px solid #ccc",
+        
             }}
           />
         );
